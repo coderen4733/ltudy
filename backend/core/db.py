@@ -6,20 +6,15 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,  # 비동기 세션 팩토리 생성용
     create_async_engine,  # 비동기 엔진 생성용
 )
-from sqlmodel import SQLModel  # 테이블 메타데이터(모델 정의) 관리용
 from sqlmodel.ext.asyncio.session import AsyncSession  # 비동기 ORM 세션
 
 from core.config import SBDB_URL  # .env에서 불러온 SupabaseDB URL
 
 # SBDB_URL 정규화
 # Supabase가 알려주는 URL은 "postgresql://..." 형태인데,
-# 비동기로 접속하려면 asyncpg 드라이버를 명시한 "postgresql+asyncpg://..."가 필요함
+# 비동기 접속에는 asyncpg 드라이버를 명시한
+# "postgresql+asyncpg://..." 형태가 필요함
 # 그래서 드라이버 지정이 없으면 여기서 자동으로 붙여줌
-#
-# [참고] .env의 SBDB_URL에는 Supabase의 "Connection Pooling(Session pooler)" 주소를
-#        넣어야 합니다. Direct 연결 주소(db.<ref>.supabase.co)는 IPv6 전용이라
-#        IPv4 환경에서는 접속되지 않습니다.
-#        예) postgresql://postgres.<ref>:<PW>@aws-0-<region>.pooler.supabase.com:5432/postgres
 if SBDB_URL and SBDB_URL.startswith("postgresql://"):
     ASYNC_DB_URL = SBDB_URL.replace(
         "postgresql://", "postgresql+asyncpg://", 1
@@ -34,7 +29,8 @@ else:
 engine: AsyncEngine = create_async_engine(
     ASYNC_DB_URL,
     echo=True,
-    pool_pre_ping=True,  # 커넥션이 끊겼는지 미리 확인 후 사용(끊긴 커넥션 방지)
+    # pool_pre_ping: 커넥션이 끊겼는지 미리 확인 후 사용(끊긴 커넥션 방지)
+    pool_pre_ping=True,
     # Supabase 커넥션 풀러(PgBouncer)는 prepared statement를 지원하지 않으므로,
     # asyncpg가 만드는 statement 캐시를 꺼서 호환성 문제를 방지함
     connect_args={"statement_cache_size": 0},
@@ -54,17 +50,19 @@ async_session_factory = async_sessionmaker(
 # DB 연결 확인용 함수
 # apps/main.py의 lifespan에서 앱 시작 시 호출하여 실제 접속이 되는지 검증함
 async def check_db_connection() -> None:
-    # 커넥션을 하나 빌려 "SELECT 1"을 날려보고, 예외가 없으면 연결 성공으로 판단
+    # 커넥션을 하나 빌려 "SELECT 1"을 날려봄
+    # 예외가 발생하지 않으면 연결 성공으로 판단
     async with engine.connect() as conn:
         await conn.execute(text("SELECT 1"))
 
 
-# 테이블 생성용 함수
-# SQLModel 모델 클래스로 정의한 테이블들을 DB에 없으면 만들어 줌
-# (실무에서는 Alembic 같은 마이그레이션 도구를 쓰지만, 초기 개발엔 이걸로 충분함)
-async def init_db() -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+# [참고] 테이블 생성은 Alembic 마이그레이션이 담당합니다.
+# 예전에는 여기서 SQLModel.metadata.create_all 로 만들었지만,
+# 컬럼 추가/변경까지 관리하려고 Alembic 을 도입하면서 제거했습니다.
+# 스키마를 바꾼 뒤에는 아래 명령을 실행하세요.
+#   poetry run alembic revision --autogenerate -m "변경 내용"
+#   poetry run alembic upgrade head
+# (자세한 설명은 md/002_alembic.md 참고)
 
 
 # Engine 종료용 함수

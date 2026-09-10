@@ -6,6 +6,7 @@
 - Supabase에서 제공하는 무료티어 Postgresql DB를 사용한다.
 - DB URL(DB Password 포함)은 .env에서 core/config.py를 통해 가져온다.
 - ORM은 SQLModel을 사용한다.
+- DB 스키마 변동은 alembic으로 추적한다.
 
 ## Redis 연결
 - Redis Cloud 무료티어를 사용한다.

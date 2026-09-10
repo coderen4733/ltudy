@@ -19,7 +19,8 @@ dependencies = [
     "redis (>=8.1.0,<9.0.0)",
     "sqlmodel (>=0.0.42,<0.0.43)",
     "asyncpg (>=0.31.0,<0.32.0)",
-    "greenlet (>=3.5.5,<4.0.0)"
+    "greenlet (>=3.5.5,<4.0.0)",
+    "alembic (>=1.19.2,<2.0.0)"
 ]
 
 
@@ -32,6 +33,8 @@ build-backend = "poetry.core.masonry.api"
 # 🌟 자바스크립트의 printWidth와 동일한 설정입니다.
 # 파이썬 공식 표준 가이드(PEP 8)의 대중적인 기준인 79글자로 세팅합니다. (원하시면 80이나 88로 변경 가능)
 line-length = 79
+# Alembic 자동 생성 마이그레이션 파일은 도구가 만드는 코드이므로 린트 대상에서 제외합니다.
+extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 # 코드를 더 깔끔하게 강제하기 위한 린트 규칙 활성화 (선택 사항)

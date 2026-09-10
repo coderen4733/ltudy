@@ -15,7 +15,6 @@ from core.db import (  # SupabaseDB(SQLModel) 연결 관련
     check_db_connection,
     close_db,
     get_session,
-    init_db,
 )
 from core.redis import get_redis
 
@@ -30,9 +29,8 @@ async def lifespan(app: FastAPI):
     # A-D. DB 연결
     try:
         # A-D-1. 실제 접속이 되는지 "SELECT 1"로 확인
+        # (테이블 생성/변경은 Alembic 마이그레이션이 담당함)
         await check_db_connection()
-        # A-D-2. SQLModel 모델로 정의한 테이블이 없으면 생성
-        await init_db()
         # A-D-O. SupabaseDB 연결 성공
         print("SupabaseDB 연결에 성공했습니다.")
     except Exception as db_err:
